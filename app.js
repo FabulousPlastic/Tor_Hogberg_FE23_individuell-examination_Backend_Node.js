@@ -1,24 +1,25 @@
-const express = require("express");
-const session = require("express-session");
-const { connectToMongoDB } = require("./config/database");
+const express = require("express"); // Import the Express module
+const session = require("express-session"); // Import the express-session module for session management
+const { connectToMongoDB } = require("./config/database"); // Import the function to connect to MongoDB
 
-const routes = require("./routes/routes");
+const routes = require("./routes/routes"); // Import the routes
 
-const app = express();
+const app = express(); // Create an Express application
 
-app.use(express.json());
+app.use(express.json()); // Middleware to parse JSON bodies
 
+// Middleware to handle sessions
 app.use(
   session({
-    secret: "grupp7",
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false },
+    secret: "grupp7", // Secret key for signing the session ID cookie
+    resave: false, // Do not save session if unmodified
+    saveUninitialized: true, // Save uninitialized sessions
+    cookie: { secure: false }, // Cookie settings (secure should be true in production with HTTPS)
   })
 );
 
-app.use("/", routes);
+app.use("/", routes); // Use the imported routes for the root path
 
-connectToMongoDB();
+connectToMongoDB(); // Connect to MongoDB
 
-module.exports = app;
+module.exports = app; // Export the Express application
