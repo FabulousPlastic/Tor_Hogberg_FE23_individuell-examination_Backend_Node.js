@@ -1,8 +1,8 @@
 const express = require("express"); // Import the Express module
 const session = require("express-session"); // Import the express-session module for session management
 const { connectToMongoDB } = require("./config/database"); // Import the function to connect to MongoDB
-
 const routes = require("./routes/routes"); // Import the routes
+const productRoutes = require("./routes/productRoutes");
 
 const app = express(); // Create an Express application
 
@@ -19,6 +19,7 @@ app.use(
 );
 
 app.use("/", routes); // Use the imported routes for the root path
+app.use("/products", productRoutes); 
 
 connectToMongoDB(); // Connect to MongoDB
 
