@@ -297,7 +297,7 @@ exports.logIn = async (req, res) => {
     const shiftedUser = user.slice(5) + user.slice(0, 5);
     const shiftedPass = pass.slice(5) + pass.slice(0, 5);
 
-    const database = client.db("Airbean");
+    const database = client.db("AirbeanSolo");
     const userbase = database.collection("Users");
 
     const findUser = await userbase.findOne({ username: shiftedUser });

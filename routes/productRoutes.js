@@ -13,15 +13,18 @@ router.post('/add-product', authenticateAdmin, async (req, res) => {
   }
 
   try {
-    // Insert the Product into MongoDB
-    const newProduct = new Product({ 
-      id, 
-      title, 
-      desc, 
-      price, 
-      createdAt: new Date() // Add createdAt field
-    });
-    await newProduct.save();
+    const database = client.db("Airbean");
+    const menuCollection = database.collection("Menu");
+
+    const newProduct = {
+        id,
+        title,
+        desc,
+        price,
+        createdAt: new Date()
+    };
+
+    await menuCollection.insertOne(newProduct);
 
     // Respond to the Client
     res.status(201).json({ message: 'Product added successfully', product: newProduct });
