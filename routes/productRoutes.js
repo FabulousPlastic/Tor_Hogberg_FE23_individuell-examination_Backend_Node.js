@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { client } = require('../config/database'); // Adjust the path as necessary
+const { client } = require('../config/database');
 const authenticateAdmin = require('../middleware/authenticateAdmin');
-const { ObjectId } = require('mongodb'); // Import ObjectId
+const { ObjectId } = require('mongodb');
+
+
 // Endpoint to add a new product
 router.post('/add-product', authenticateAdmin, async (req, res) => {
   const { id, title, desc, price } = req.body;
@@ -54,25 +56,31 @@ router.put('/modify-product/:id', authenticateAdmin, async (req, res) => {
   try {
     const database = client.db("Airbean");
     const menuCollection = database.collection("Menu");
+    
 
+    const allDocuments = await menuCollection.find({}).toArray();
+    console.log('All Documents in Menu Collection:', allDocuments);
+  
     // Determine the query based on whether the id is a valid ObjectId
-    const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id: id };
+    const query = ObjectId.isValid(id) 
+      ? { _id: new ObjectId(id) } 
+      : { $or: [{ id: id }, { id: parseInt(id, 10) }] };
     console.log('Modify Product Query:', query);
 
+
     // Find and update the product
-    const updatedProduct = await menuCollection.findOneAndUpdate(
-      query,
+    const updatedProduct = await menuCollection.findOneAndUpdate(query,
       { $set: updateFields },
       { returnDocument: 'after' }
     );
     console.log('Updated Product:', updatedProduct);
 
-    if (!updatedProduct || !updatedProduct.value) {
+    if (!updatedProduct) {
       return res.status(404).json({ error: 'Product not found' });
     }
-
+    
     // Respond to the Client
-    res.status(200).json({ message: 'Product modified successfully', product: updatedProduct.value });
+    res.status(200).json({ message: 'Product modified successfully', product: updatedProduct });
   } catch (error) {
     console.error('Error modifying product:', error);
     res.status(500).json({ error: 'Error modifying product' });
@@ -96,7 +104,7 @@ router.delete('/delete-product/:id', authenticateAdmin, async (req, res) => {
     const deletedProduct = await menuCollection.findOneAndDelete(query);
     console.log('Deleted Product:', deletedProduct);
 
-    if (!deletedProduct.value) {
+    if (!deletedProduct) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
