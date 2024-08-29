@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const Product = require('../models/Product');
-const authenticateAdmin = require('../middleware/authenticateAdmin');
 const { client } = require('../config/database'); // Adjust the path as necessary
-
+const authenticateAdmin = require('../middleware/authenticateAdmin');
+const { ObjectId } = require('mongodb'); // Import ObjectId
 // Endpoint to add a new product
 router.post('/add-product', authenticateAdmin, async (req, res) => {
   const { id, title, desc, price } = req.body;
@@ -18,11 +17,11 @@ router.post('/add-product', authenticateAdmin, async (req, res) => {
     const menuCollection = database.collection("Menu");
 
     const newProduct = {
-        id,
-        title,
-        desc,
-        price,
-        createdAt: new Date()
+      id,
+      title,
+      desc,
+      price,
+      createdAt: new Date()
     };
 
     await menuCollection.insertOne(newProduct);
@@ -34,50 +33,77 @@ router.post('/add-product', authenticateAdmin, async (req, res) => {
   }
 });
 
+
 // Endpoint to modify a product
 router.put('/modify-product/:id', authenticateAdmin, async (req, res) => {
   const { id } = req.params;
   const { title, desc, price } = req.body;
 
-  // Validate the Request Body
-  if (!title || !desc || !price) {
-    return res.status(400).json({ error: 'All product properties must be provided' });
+  // Build the update object dynamically
+  const updateFields = {};
+  if (title) updateFields.title = title;
+  if (desc) updateFields.desc = desc;
+  if (price) updateFields.price = price;
+  updateFields.modifiedAt = new Date(); // Always update the modifiedAt field
+
+  // Check if there are any fields to update
+  if (Object.keys(updateFields).length === 1) { // Only modifiedAt is present
+    return res.status(400).json({ error: 'At least one product property must be provided' });
   }
 
   try {
-    // Find and update the product
-    const updatedProduct = await Product.findOneAndUpdate(
-      { id },
-      { title, desc, price, modifiedAt: new Date() },
-      { new: true }
-    );
+    const database = client.db("Airbean");
+    const menuCollection = database.collection("Menu");
 
-    if (!updatedProduct) {
+    // Determine the query based on whether the id is a valid ObjectId
+    const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id: id };
+    console.log('Modify Product Query:', query);
+
+    // Find and update the product
+    const updatedProduct = await menuCollection.findOneAndUpdate(
+      query,
+      { $set: updateFields },
+      { returnDocument: 'after' }
+    );
+    console.log('Updated Product:', updatedProduct);
+
+    if (!updatedProduct || !updatedProduct.value) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
     // Respond to the Client
-    res.status(200).json({ message: 'Product modified successfully', product: updatedProduct });
+    res.status(200).json({ message: 'Product modified successfully', product: updatedProduct.value });
   } catch (error) {
+    console.error('Error modifying product:', error);
     res.status(500).json({ error: 'Error modifying product' });
   }
 });
+
 
 // Endpoint to delete a product
 router.delete('/delete-product/:id', authenticateAdmin, async (req, res) => {
   const { id } = req.params;
 
   try {
-    // Find and delete the product
-    const deletedProduct = await Product.findOneAndDelete({ id });
+    const database = client.db("Airbean");
+    const menuCollection = database.collection("Menu");
 
-    if (!deletedProduct) {
+    // Determine the query based on whether the id is a valid ObjectId
+    const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id: id };
+    console.log('Delete Product Query:', query);
+
+    // Find and delete the product
+    const deletedProduct = await menuCollection.findOneAndDelete(query);
+    console.log('Deleted Product:', deletedProduct);
+
+    if (!deletedProduct.value) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
     // Respond to the Client
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (error) {
+    console.error('Error deleting product:', error);
     res.status(500).json({ error: 'Error deleting product' });
   }
 });
