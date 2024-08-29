@@ -184,43 +184,43 @@ exports.getMenu = async (req, res) => {
 };
 
 // Export an asynchronous function 'logIn' to handle user login
-exports.logIn = async (req, res) => {
-    const details = req.body;
+// exports.logIn = async (req, res) => {
+//     const details = req.body;
 
-    try {
-        const user = crypto
-            .createHash("sha256")
-            .update(details.username)
-            .digest("hex");
+//     try {
+//         const user = crypto
+//             .createHash("sha256")
+//             .update(details.username)
+//             .digest("hex");
 
-        const pass = crypto
-            .createHash("sha256")
-            .update(details.password)
-            .digest("hex");
+//         const pass = crypto
+//             .createHash("sha256")
+//             .update(details.password)
+//             .digest("hex");
 
-        const shiftedUser = user.slice(5) + user.slice(0, 5);
-        const shiftedPass = pass.slice(5) + pass.slice(0, 5);
+//         const shiftedUser = user.slice(5) + user.slice(0, 5);
+//         const shiftedPass = pass.slice(5) + pass.slice(0, 5);
 
-        const database = client.db("Airbean");
-        const userbase = database.collection("Users");
+//         const database = client.db("Airbean");
+//         const userbase = database.collection("Users");
 
-        const findUser = await userbase.findOne({ username: shiftedUser });
+//         const findUser = await userbase.findOne({ username: shiftedUser });
 
-        if (findUser) {
-            if (shiftedPass === findUser.password) {
-                req.session.userID = findUser.username;
+//         if (findUser) {
+//             if (shiftedPass === findUser.password) {
+//                 req.session.userID = findUser.username;
 
-                res.status(200).json("Logged in!");
-            } else {
-                res.status(200).json("Wrong password");
-            }
-        } else {
-            res.status(404).json("No user found, please create an account!");
-        }
-    } catch (error) {
-        res.status(500).json({ error: error });
-    }
-};
+//                 res.status(200).json("Logged in!");
+//             } else {
+//                 res.status(200).json("Wrong password");
+//             }
+//         } else {
+//             res.status(404).json("No user found, please create an account!");
+//         }
+//     } catch (error) {
+//         res.status(500).json({ error: error });
+//     }
+// };
 
 // Export an asynchronous function 'signUp' to handle user registration
 exports.signUp = async (req, res) => {
@@ -281,40 +281,40 @@ exports.about = async (req, res) => {
 };
 
 exports.logIn = async (req, res) => {
-  const { username, password } = req.body;
-
-  try {
-    const user = crypto
-      .createHash("sha256")
-      .update(username)
-      .digest("hex");
-
-    const pass = crypto
-      .createHash("sha256")
-      .update(password)
-      .digest("hex");
-
-    const shiftedUser = user.slice(5) + user.slice(0, 5);
-    const shiftedPass = pass.slice(5) + pass.slice(0, 5);
-
-    const database = client.db("AirbeanSolo");
-    const userbase = database.collection("Users");
-
-    const findUser = await userbase.findOne({ username: shiftedUser });
-
-    if (findUser) {
-      if (shiftedPass === findUser.password) {
-        req.session.userID = findUser.username;
-        req.session.userRole = findUser.role; // Assuming role is stored in the user document
-
-        res.status(200).json("Logged in!");
+    const { username, password } = req.body;
+  
+    try {
+      const user = crypto
+        .createHash("sha256")
+        .update(username)
+        .digest("hex");
+  
+      const pass = crypto
+        .createHash("sha256")
+        .update(password)
+        .digest("hex");
+  
+      const shiftedUser = user.slice(5) + user.slice(0, 5);
+      const shiftedPass = pass.slice(5) + pass.slice(0, 5);
+  
+      const database = client.db("Airbean");
+      const userbase = database.collection("Users");
+  
+      const findUser = await userbase.findOne({ username: shiftedUser });
+  
+      if (findUser) {
+        if (shiftedPass === findUser.password) {
+          req.session.userID = findUser.username;
+          req.session.userRole = findUser.role; // Set the userRole in the session
+  
+          res.status(200).json("Logged in!");
+        } else {
+          res.status(200).json("Wrong password");
+        }
       } else {
-        res.status(200).json("Wrong password");
+        res.status(404).json("No user found, please create an account!");
       }
-    } else {
-      res.status(404).json("No user found, please create an account!");
+    } catch (error) {
+      res.status(500).json({ error: error });
     }
-  } catch (error) {
-    res.status(500).json({ error: error });
-  }
-};
+  };

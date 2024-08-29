@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
 const authenticateAdmin = require('../middleware/authenticateAdmin');
+const { client } = require('../config/database'); // Adjust the path as necessary
 
 // Endpoint to add a new product
 router.post('/add-product', authenticateAdmin, async (req, res) => {
