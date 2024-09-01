@@ -4,7 +4,6 @@ const { client } = require('../config/database');
 const authenticateAdmin = require('../middleware/authenticateAdmin');
 const { ObjectId } = require('mongodb');
 
-
 // Endpoint to add a new product
 router.post('/add-product', authenticateAdmin, async (req, res) => {
   const { id, title, desc, price } = req.body;
@@ -35,7 +34,6 @@ router.post('/add-product', authenticateAdmin, async (req, res) => {
   }
 });
 
-
 // Endpoint to modify a product
 router.put('/modify-product/:id', authenticateAdmin, async (req, res) => {
   const { id } = req.params;
@@ -56,17 +54,15 @@ router.put('/modify-product/:id', authenticateAdmin, async (req, res) => {
   try {
     const database = client.db("Airbean");
     const menuCollection = database.collection("Menu");
-    
 
     const allDocuments = await menuCollection.find({}).toArray();
     console.log('All Documents in Menu Collection:', allDocuments);
-  
+
     // Determine the query based on whether the id is a valid ObjectId
     const query = ObjectId.isValid(id) 
       ? { _id: new ObjectId(id) } 
       : { $or: [{ id: id }, { id: parseInt(id, 10) }] };
     console.log('Modify Product Query:', query);
-
 
     // Find and update the product
     const updatedProduct = await menuCollection.findOneAndUpdate(query,
@@ -75,18 +71,17 @@ router.put('/modify-product/:id', authenticateAdmin, async (req, res) => {
     );
     console.log('Updated Product:', updatedProduct);
 
-    if (!updatedProduct) {
+    if (!updatedProduct.value) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
+
     // Respond to the Client
-    res.status(200).json({ message: 'Product modified successfully', product: updatedProduct });
+    res.status(200).json({ message: 'Product modified successfully', product: updatedProduct.value });
   } catch (error) {
     console.error('Error modifying product:', error);
     res.status(500).json({ error: 'Error modifying product' });
   }
 });
-
 
 // Endpoint to delete a product
 router.delete('/delete-product/:id', authenticateAdmin, async (req, res) => {
@@ -104,7 +99,7 @@ router.delete('/delete-product/:id', authenticateAdmin, async (req, res) => {
     const deletedProduct = await menuCollection.findOneAndDelete(query);
     console.log('Deleted Product:', deletedProduct);
 
-    if (!deletedProduct) {
+    if (!deletedProduct.value) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
@@ -116,8 +111,8 @@ router.delete('/delete-product/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
-// Endpoint to add a promotional offer
-router.post('/add-promotion', authenticateAdmin, async (req, res) => {
+// Endpoint to add a campaign offer
+router.post('/add-campaign', authenticateAdmin, async (req, res) => {
   const { products, campaignPrice } = req.body;
 
   if (!products || !Array.isArray(products) || products.length === 0 || !campaignPrice) {
@@ -127,7 +122,7 @@ router.post('/add-promotion', authenticateAdmin, async (req, res) => {
   try {
     const database = client.db("Airbean");
     const menuCollection = database.collection("Menu");
-    const promotionsCollection = database.collection("Promotions");
+    const campaignsCollection = database.collection("Campaigns");
 
     // Validate that all products exist
     const productIds = products.map(product => ObjectId.isValid(product) ? new ObjectId(product) : product);
@@ -137,22 +132,22 @@ router.post('/add-promotion', authenticateAdmin, async (req, res) => {
       return res.status(404).json({ error: 'One or more products not found' });
     }
 
-    // Create the promotional offer
-    const promotion = {
+    // Create the campaign offer
+    const campaign = {
       products: existingProducts.map(product => product._id),
       campaignPrice,
       createdAt: new Date(),
       modifiedAt: new Date()
     };
 
-    // Save the promotional offer to the database
-    const result = await promotionsCollection.insertOne(promotion);
+    // Save the campaign offer to the database
+    const result = await campaignsCollection.insertOne(campaign);
 
     // Respond to the client
-    res.status(201).json({ message: 'Promotion added successfully', promotionId: result.insertedId });
+    res.status(201).json({ message: 'Campaign added successfully', campaignId: result.insertedId });
   } catch (error) {
-    console.error('Error adding promotion:', error);
-    res.status(500).json({ error: 'Error adding promotion' });
+    console.error('Error adding campaign:', error);
+    res.status(500).json({ error: 'Error adding campaign' });
   }
 });
 
