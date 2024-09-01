@@ -55,13 +55,8 @@ router.put('/modify-product/:id', authenticateAdmin, async (req, res) => {
     const database = client.db("Airbean");
     const menuCollection = database.collection("Menu");
 
-    const allDocuments = await menuCollection.find({}).toArray();
-    console.log('All Documents in Menu Collection:', allDocuments);
-
     // Determine the query based on whether the id is a valid ObjectId
-    const query = ObjectId.isValid(id) 
-      ? { _id: new ObjectId(id) } 
-      : { $or: [{ id: id }, { id: parseInt(id, 10) }] };
+    const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id: id };
     console.log('Modify Product Query:', query);
 
     // Find and update the product
@@ -71,12 +66,12 @@ router.put('/modify-product/:id', authenticateAdmin, async (req, res) => {
     );
     console.log('Updated Product:', updatedProduct);
 
-    if (!updatedProduct.value) {
+    if (!updatedProduct) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
     // Respond to the Client
-    res.status(200).json({ message: 'Product modified successfully', product: updatedProduct.value });
+    res.status(200).json({ message: 'Product modified successfully', product: updatedProduct });
   } catch (error) {
     console.error('Error modifying product:', error);
     res.status(500).json({ error: 'Error modifying product' });
@@ -99,7 +94,7 @@ router.delete('/delete-product/:id', authenticateAdmin, async (req, res) => {
     const deletedProduct = await menuCollection.findOneAndDelete(query);
     console.log('Deleted Product:', deletedProduct);
 
-    if (!deletedProduct.value) {
+    if (!deletedProduct) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
@@ -124,9 +119,18 @@ router.post('/add-campaign', authenticateAdmin, async (req, res) => {
     const menuCollection = database.collection("Menu");
     const campaignsCollection = database.collection("Campaigns");
 
+    // Fetch the full menu
+    const fullMenu = await menuCollection.find({}).toArray();
+    console.log('Full Menu:', fullMenu);
+
     // Validate that all products exist
-    const productIds = products.map(product => ObjectId.isValid(product) ? new ObjectId(product) : product);
-    const existingProducts = await menuCollection.find({ _id: { $in: productIds } }).toArray();
+    const productIds = products.map(product => product.toString());
+    console.log('Product IDs:', productIds);
+
+    const existingProducts = fullMenu.filter(product => 
+      productIds.some(id => id === product.id.toString())
+    );
+    console.log('Existing Products:', existingProducts);
 
     if (existingProducts.length !== products.length) {
       return res.status(404).json({ error: 'One or more products not found' });
@@ -145,10 +149,10 @@ router.post('/add-campaign', authenticateAdmin, async (req, res) => {
 
     // Respond to the client
     res.status(201).json({ message: 'Campaign added successfully', campaignId: result.insertedId });
-  } catch (error) {
+} catch (error) {
     console.error('Error adding campaign:', error);
     res.status(500).json({ error: 'Error adding campaign' });
-  }
+}
 });
 
 module.exports = router;
