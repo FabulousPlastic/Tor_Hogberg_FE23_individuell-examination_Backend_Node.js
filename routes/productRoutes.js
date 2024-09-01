@@ -116,4 +116,44 @@ router.delete('/delete-product/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Endpoint to add a promotional offer
+router.post('/add-promotion', authenticateAdmin, async (req, res) => {
+  const { products, campaignPrice } = req.body;
+
+  if (!products || !Array.isArray(products) || products.length === 0 || !campaignPrice) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
+
+  try {
+    const database = client.db("Airbean");
+    const menuCollection = database.collection("Menu");
+    const promotionsCollection = database.collection("Promotions");
+
+    // Validate that all products exist
+    const productIds = products.map(product => ObjectId.isValid(product) ? new ObjectId(product) : product);
+    const existingProducts = await menuCollection.find({ _id: { $in: productIds } }).toArray();
+
+    if (existingProducts.length !== products.length) {
+      return res.status(404).json({ error: 'One or more products not found' });
+    }
+
+    // Create the promotional offer
+    const promotion = {
+      products: existingProducts.map(product => product._id),
+      campaignPrice,
+      createdAt: new Date(),
+      modifiedAt: new Date()
+    };
+
+    // Save the promotional offer to the database
+    const result = await promotionsCollection.insertOne(promotion);
+
+    // Respond to the client
+    res.status(201).json({ message: 'Promotion added successfully', promotionId: result.insertedId });
+  } catch (error) {
+    console.error('Error adding promotion:', error);
+    res.status(500).json({ error: 'Error adding promotion' });
+  }
+});
+
 module.exports = router;
